@@ -1,0 +1,171 @@
+{
+	"info": {
+		"_postman_id": "9912d217-9cde-4e1c-91a3-114a81df3298",
+		"name": "[Auth Flow |  UHP] Token Expiration",
+		"description": "StartFragment\n\nScenario: Token Expiration\n\nGiven user have an expired authentication token\n\nWhen user try to access any protected endpoint\n\nThen user should receive a 401 Unauthorized response\n\nAnd the response should include a \"Token expired\" message\n\nEndFragment",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "21931848"
+	},
+	"item": [
+		{
+			"name": "01_setup",
+			"item": [
+				{
+					"name": "[Auth Flow | HP] Get Auth Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"if (pm.response.code === 200) {\r",
+									"    // Modify token to simulate expiration\r",
+									"    const response = pm.response.json();\r",
+									"    const tokenParts = response.access_token.split('.');\r",
+									"    const payload = JSON.parse(atob(tokenParts[1]));\r",
+									"    payload.exp = Math.floor(Date.now() / 1000) - 3600; // Expired 1 hour ago\r",
+									"    tokenParts[1] = btoa(JSON.stringify(payload));\r",
+									"    const expiredToken = tokenParts.join('.');\r",
+									"    pm.environment.set(\"expiredToken\", expiredToken);\r",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{clientSecret}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{clientId}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "core_api.full core_api.license_plate",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{authUrl}}connect/token",
+							"host": [
+								"{{authUrl}}connect"
+							],
+							"path": [
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Auth Flow |  UHP] Create Collection with Expired Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Should return 401 Unauthorized\", function () {\r",
+									"    pm.response.to.have.status(401);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Response should include invalid token message\", function () {\r",
+									"    const wwwAuthHeader = pm.response.headers.get(\"WWW-Authenticate\");\r",
+									"    pm.expect(wwwAuthHeader).to.include(\"error=\\\"invalid_token\\\"\");\r",
+									"    pm.expect(wwwAuthHeader).to.include(\"error_description=\\\"The signature is invalid\\\"\");\r",
+									"});\r",
+									"\r",
+									"if (pm.response.code === 401) {\r",
+									"    pm.environment.unset(\"expiredToken\");\r",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"console.log(\"Attempting access with expired token...\");"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{expiredToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"customer_reference\": \"E2E Test Parking\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}v1.2/collections",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"collections"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

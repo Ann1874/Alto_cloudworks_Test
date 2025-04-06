@@ -1,0 +1,1300 @@
+{
+	"info": {
+		"_postman_id": "9936cbc2-6346-45bf-be71-60d325a1cf74",
+		"name": "[Access Flow | UHP] Cross Collection Access",
+		"description": "StartFragment\n\nScenario: Cross-Collection Access Attempt\n\n  Given user have a configured lock in Collection A with an accessor \n\nAnd user have another Collection B \n\nWhen user try to access the lock from Collection A using Collection B's ID \n\nThen user should receive a 403 Forbidden response  \n\nEndFragment",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "21931848"
+	},
+	"item": [
+		{
+			"name": "01_setup",
+			"item": [
+				{
+					"name": "[Auth Flow | HP] Get Auth Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"if (pm.response.code === 200) {\r",
+									"    pm.environment.set(\"accessToken\", pm.response.json().access_token);\r",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{clientSecret}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{clientId}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "core_api.full core_api.license_plate",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{authUrl}}connect/token",
+							"host": [
+								"{{authUrl}}connect"
+							],
+							"path": [
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Auth Flow |  HP] Create Collection",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"if (pm.response.code === 200) {\r",
+									"    pm.environment.set(\"collectionId\", pm.response.json().id);\r",
+									"}\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Collection created with correct reference\", function () {\r",
+									"    pm.expect(response.customer_reference).to.eql(\"E2E Test Parking\");\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Collection ID is present and valid\", function () {\r",
+									"    pm.expect(response.id).to.be.a('string');\r",
+									"    pm.environment.set(\"collectionId\", response.id);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Response contains required fields\", function () {\r",
+									"    pm.expect(response).to.have.property('id');\r",
+									"    pm.expect(response).to.have.property('customer_reference');\r",
+									"    pm.expect(response).to.have.property('vendors');\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"customer_reference\": \"E2E Test Parking\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}v1.2/collections",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"collections"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Auth Flow |  HP] Create Collection B",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"if (pm.response.code === 200) {\r",
+									"    const collectionResponse = pm.response.json();\r",
+									"    pm.environment.set(\"collectionB_Id\", collectionResponse.id);\r",
+									"    console.log(\"Collection B created with ID:\", collectionResponse.id);\r",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"customer_reference\": \"Collection B\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}v1.2/collections",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"collections"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Auth Flow | HP] Register Lock",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Lock registration successful\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"if (pm.response.code === 200) {\r",
+									"    const lockResponse = pm.response.json();\r",
+									"    pm.environment.set(\"lockId_A\", lockResponse.id); \r",
+									"    console.log(\"Lock created in Collection A with ID:\", lockResponse.id);\r",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"customer_reference\": \"Main Gate\",\r\n    \"activation_code\": \"{{activationCode}}\",\r\n    \"collection_id\": \"{{collectionId}}\",\r\n    \"license_plate_camera\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.2/locks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.2",
+								"locks"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "02_AccessConfig",
+			"item": [
+				{
+					"name": "[Access Flow | HP] Create Access Group",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Access Group created successfully\", function () {\r",
+									"    pm.expect(response.id).to.be.a('string');\r",
+									"    pm.environment.set(\"accessGroupId\", response.id);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Access Group belongs to correct collection\", function () {\r",
+									"    pm.expect(response.collection_id).to.eql(pm.environment.get(\"collectionId\"));\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Access Group has correct customer reference\", function () {\r",
+									"    pm.expect(response.customer_reference).to.eql(\"Parking_Group_001\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"collection_id\": \"{{collectionId}}\",\r\n    \"customer_reference\": \"Parking_Group_001\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}v1.2/access_groups",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"access_groups"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Access Flow | HP] Create Time Schedule",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Time Schedule created successfully\", function () {\r",
+									"    pm.expect(response.id).to.be.a('string');\r",
+									"    pm.environment.set(\"timeScheduleId\", response.id);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Time Schedule has correct days configuration\", function () {\r",
+									"    pm.expect(response.monday).to.be.true;\r",
+									"    pm.expect(response.tuesday).to.be.true;\r",
+									"    pm.expect(response.wednesday).to.be.true;\r",
+									"    pm.expect(response.thursday).to.be.true;\r",
+									"    pm.expect(response.friday).to.be.true;\r",
+									"    pm.expect(response.saturday).to.be.true;\r",
+									"    pm.expect(response.sunday).to.be.true;\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"24/7 Access\",\r\n    \"start_time\": \"00:00\",\r\n    \"end_time\": \"23:59\",\r\n    \"monday\": true,\r\n    \"tuesday\": true,\r\n    \"wednesday\": true,\r\n    \"thursday\": true,\r\n    \"friday\": true,\r\n    \"saturday\": true,\r\n    \"sunday\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}v1.2/access_groups/{{accessGroupId}}/time_schedules",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"access_groups",
+								"{{accessGroupId}}",
+								"time_schedules"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Access Flow | HP] Add Lock to Access Group",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {\r",
+									"    pm.response.to.have.status(204);\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"add_ids\": [\r\n        \"{{lockId_A}}\"\r\n    ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}v1.2/access_groups/{{accessGroupId}}/locks",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"access_groups",
+								"{{accessGroupId}}",
+								"locks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Access Flow | HP] Verify Lock has been added to Access Group",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"\r",
+									"pm.test(\"Lock added to access group successfully\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"\r",
+									"    const response = pm.response.json();\r",
+									"    \r",
+									"    pm.expect(response.items).to.be.an('array').that.is.not.empty;\r",
+									"    \r",
+									"    const lockFound = response.items.some(lock => \r",
+									"        lock.id === pm.environment.get(\"lockId_A\") &&\r",
+									"        lock.license_plate_camera === true &&\r",
+									"        lock.collection_id === pm.environment.get(\"collectionId\")\r",
+									"    );\r",
+									"    \r",
+									"    pm.expect(lockFound, \"Lock should be found in access group\").to.be.true;\r",
+									"    \r",
+									"    console.log(\"Lock verification completed successfully\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}v1.2/access_groups/{{accessGroupId}}/locks",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"access_groups",
+								"{{accessGroupId}}",
+								"locks"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "03_AccessorConfig",
+			"item": [
+				{
+					"name": "[Access Flow | HP] Create Accessor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Accessor created successfully\", function () {\r",
+									"    pm.expect(response.id).to.be.a('string');\r",
+									"    pm.environment.set(\"accessorId\", response.id);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Accessor has correct configuration\", function () {\r",
+									"    pm.expect(response.collection_id).to.eql(pm.environment.get(\"collectionId\"));\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"customer_reference\": \"Parking User\",\r\n    \"collection_id\": \"{{collectionId}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}v1.2/accessors",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"accessors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Access Flow | HP] Add Accessor to Access Group",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {\r",
+									"    pm.response.to.have.status(204);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"add_ids\": [\"{{accessorId}}\"]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}v1.2/access_groups/{{accessGroupId}}/accessors",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"access_groups",
+								"{{accessGroupId}}",
+								"accessors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Access Flow | HP] Verify Accessor has been added to Access Group",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Verify accessor is in access group\", function () {\r",
+									"\r",
+									"    pm.response.to.have.status(200);\r",
+									"    \r",
+									"    const response = pm.response.json();\r",
+									"    \r",
+									"    pm.expect(response.items).to.be.an('array').that.is.not.empty;\r",
+									"    \r",
+									"    const accessorFound = response.items.some(accessor => \r",
+									"        accessor.id === pm.environment.get(\"accessorId\") &&\r",
+									"        accessor.blocked === false &&\r",
+									"        accessor.collection_id === pm.environment.get(\"collectionId\")\r",
+									"    );\r",
+									"    \r",
+									"    pm.expect(accessorFound, \"Accessor should be found in access group and not blocked\").to.be.true;\r",
+									"    \r",
+									"    console.log(\"Accessor verification in access group completed successfully\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}v1.2/access_groups/{{accessGroupId}}/accessors",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"access_groups",
+								"{{accessGroupId}}",
+								"accessors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Access Flow | HP] Create License Plate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"pm.test(\"License plate created successfully\", function () {\r",
+									"    pm.expect(response.license_plate).to.exist;\r",
+									"    pm.expect(response.blocked).to.be.false;\r",
+									"});\r",
+									"\r",
+									"pm.environment.set(\"LicensePlate\", response.license_plate);\r",
+									"pm.environment.set(\"LicensePlateId\", response.id);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"\r",
+									"const randomDigits = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');\r",
+									"\r",
+									"pm.environment.set(\"LicensePlate\", randomDigits);\r",
+									"\r",
+									"console.log(\"Generated random license plate:\", randomDigits);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"license_plate\": \"{{LicensePlate}}\",\r\n    \"blocked\": false\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}v1.2/accessors/{{accessorId}}/license_plates",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"accessors",
+								"{{accessorId}}",
+								"license_plates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Access Flow | HP] Verify License Plate has been created",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"License plate created successfully\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"    \r",
+									"    const response = pm.response.json();\r",
+									"    \r",
+									"    pm.expect(response.items).to.be.an('array').that.is.not.empty;\r",
+									"    \r",
+									"    const licensePlateFound = response.items.some(plate => \r",
+									"        plate.id === pm.environment.get(\"LicensePlateId\") &&\r",
+									"        plate.license_plate === pm.environment.get(\"LicensePlate\") &&\r",
+									"        !plate.blocked\r",
+									"    );\r",
+									"    \r",
+									"    pm.expect(licensePlateFound, \"License plate should be found and not blocked\").to.be.true;\r",
+									"    \r",
+									"    console.log(\"License plate verification completed successfully\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}v1.2/accessors/{{accessorId}}/license_plates",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"accessors",
+								"{{accessorId}}",
+								"license_plates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Access Flow | UHP] Configure License Plate Access with wrong Collection id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Should return 403 Forbidden for cross-collection access\", function () {\r",
+									"    pm.response.to.have.status(403);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Security headers are present\", function () {\r",
+									"    pm.response.to.have.header('Strict-Transport-Security');\r",
+									"    pm.response.to.have.header('X-Frame-Options', 'DENY');\r",
+									"    pm.response.to.have.header('X-Content-Type-Options', 'nosniff');\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "CLP-Collection-Id",
+								"value": "{{collectionB_Id}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}v1.2/collections/{{collectionId}}/locks/{{lockId_A}}/access/license_plates/{{LicensePlate}}",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"collections",
+								"{{collectionId}}",
+								"locks",
+								"{{lockId_A}}",
+								"access",
+								"license_plates",
+								"{{LicensePlate}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "04_Cleanup",
+			"item": [
+				{
+					"name": "[Access Flow | HP] Delete License Plate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Expected 204 for successful deletion\", function () {\r",
+									"    pm.response.to.have.status(204);\r",
+									"    \r",
+									"    if (pm.response.code === 204) {\r",
+									"        pm.environment.unset(\"LicensePlate\");\r",
+									"        pm.environment.unset(\"LicensePlateId\");\r",
+									"        console.log(\"License plate variables cleaned successfully\");\r",
+									"    }\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "CLP-Collection-Id",
+								"value": "{{collectionId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}v1.2/accessors/{{accessorId}}/license_plates/{{LicensePlateId}}",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"accessors",
+								"{{accessorId}}",
+								"license_plates",
+								"{{LicensePlateId}}"
+							]
+						},
+						"description": "Generated from cURL: curl --location --request DELETE 'https://clp-accept-hardware.my-clay.com/v1.2/collections/{{collectionId}}/locks/{{lockId}}/access/license_plates/{{licensePlate}}' \\\n--header 'Content-Type: application/json' \\\n--header 'CLP-Collection-Id: {{collectionId}}' \\\n--header 'Authorization: Bearer {{accessToken}}' \\\n--data-raw '' \\\n--postman-preRequestScript 'console.log(\"Cleaning up license plate access...\");' \\\n--postman-test 'pm.test(\"Expected 405 in test environment\", function () {\n    pm.response.to.have.status(405);\n});\n\n// Simulamos borrado exitoso\nconst mockResponse = {\n    \"status\": \"success\",\n    \"message\": \"License plate access removed\"\n};\n\npm.test(\"Mock: License plate access removal\", function () {\n    const response = mockResponse;\n    pm.expect(response.status).to.eql(\"success\");\n});'"
+					},
+					"response": []
+				},
+				{
+					"name": "[Access Flow | HP] Delete Accessor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Accessor deletion successful\", function () {\r",
+									"    pm.response.to.have.status(204);\r",
+									"\r",
+									"    if (pm.response.code === 204) {\r",
+									"        pm.environment.unset(\"accessorId\");\r",
+									"        console.log(\"Accessor variable cleaned successfully\");\r",
+									"    }\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}v1.2/accessors/{{accessorId}}",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"accessors",
+								"{{accessorId}}"
+							]
+						},
+						"description": "Generated from cURL: curl --location --request DELETE 'https://clp-accept-hardware.my-clay.com/v1.2/accessors/{{accessorId}}' \\\n--header 'Content-Type: application/json' \\\n--header 'Authorization: Bearer {{accessToken}}' \\\n--data-raw '' \\\n--postman-preRequestScript 'console.log(\"Cleaning up accessor...\");' \\\n--postman-test 'pm.test(\"Accessor deletion successful\", function () {\n    pm.response.to.have.status(200);\n});'"
+					},
+					"response": []
+				},
+				{
+					"name": "[Access Flow | HP] Delete Access Group",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Access group deletion successful\", function () {\r",
+									"    pm.response.to.have.status(204);\r",
+									"\r",
+									"    if (pm.response.code === 204) {\r",
+									"        pm.environment.unset(\"accessGroupId\");\r",
+									"        console.log(\"Access Group variable cleaned successfully\");\r",
+									"    }\r",
+									"})"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}v1.2/access_groups/{{accessGroupId}}",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"access_groups",
+								"{{accessGroupId}}"
+							]
+						},
+						"description": "Generated from cURL: curl --location --request DELETE 'https://clp-accept-hardware.my-clay.com/v1.2/access_groups/{{accessGroupId}}' \\\n--header 'Content-Type: application/json' \\\n--header 'Authorization: Bearer {{accessToken}}' \\\n--data-raw '' \\\n--postman-preRequestScript 'console.log(\"Cleaning up access group...\");' \\\n--postman-test 'pm.test(\"Access group deletion successful\", function () {\n    pm.response.to.have.status(200);\n});'"
+					},
+					"response": []
+				},
+				{
+					"name": "[Auth Flow | HP] Delete Lock",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Lock deletion successful\", function () {\r",
+									"    pm.response.to.have.status(204);\r",
+									"\r",
+									"    if (pm.response.code === 204) {\r",
+									"        pm.environment.unset(\"lockId_A\");\r",
+									"        console.log(\"Lock variable cleaned successfully\");\r",
+									"    }\r",
+									"})"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}v1.2/locks/{{lockId_A}}",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"locks",
+								"{{lockId_A}}"
+							]
+						},
+						"description": "Generated from cURL: curl --location --request DELETE 'https://clp-accept-hardware.my-clay.com/v1.2/locks/{{lockId}}' \\\n--header 'Content-Type: application/json' \\\n--header 'Authorization: Bearer {{accessToken}}' \\\n--data-raw '' \\\n--postman-preRequestScript 'console.log(\"Cleaning up lock...\");' \\\n--postman-test 'pm.test(\"Lock deletion successful\", function () {\n    pm.response.to.have.status(200);\n});'"
+					},
+					"response": []
+				},
+				{
+					"name": "[Auth Flow | HP]  Delete Collection",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Collection deletion successful\", function () {\r",
+									"    pm.response.to.have.status(204);\r",
+									"\r",
+									"    if (pm.response.code === 204) {\r",
+									"        pm.environment.unset(\"collectionId\");\r",
+									"        console.log(\"Collection variable cleaned successfully\");\r",
+									"    }\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}v1.2/collections/{{collectionId}}",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"collections",
+								"{{collectionId}}"
+							]
+						},
+						"description": "Generated from cURL: curl --location --request DELETE 'https://clp-accept-hardware.my-clay.com/v1.2/collections/{{collectionId}}' \\\n--header 'Content-Type: application/json' \\\n--header 'Authorization: Bearer {{accessToken}}' \\\n--data-raw '' \\\n--postman-preRequestScript 'console.log(\"Cleaning up collection...\");' \\\n--postman-test 'pm.test(\"Collection deletion successful\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"All cleanup completed\", function () {\n    pm.environment.unset(\"collectionId\");\n    pm.environment.unset(\"lockId\");\n    pm.environment.unset(\"accessGroupId\");\n    pm.environment.unset(\"accessorId\");\n    pm.environment.unset(\"licensePlate\");\n});'"
+					},
+					"response": []
+				},
+				{
+					"name": "[Auth Flow | HP]  Delete Collection B",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Collection deletion successful\", function () {\r",
+									"    pm.response.to.have.status(204);\r",
+									"\r",
+									"    if (pm.response.code === 204) {\r",
+									"        pm.environment.unset(\"collectionB_Id\");\r",
+									"        console.log(\"Collection B variable cleaned successfully\");\r",
+									"    }\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}v1.2/collections/{{collectionB_Id}}",
+							"host": [
+								"{{baseUrl}}v1",
+								"2"
+							],
+							"path": [
+								"collections",
+								"{{collectionB_Id}}"
+							]
+						},
+						"description": "Generated from cURL: curl --location --request DELETE 'https://clp-accept-hardware.my-clay.com/v1.2/collections/{{collectionId}}' \\\n--header 'Content-Type: application/json' \\\n--header 'Authorization: Bearer {{accessToken}}' \\\n--data-raw '' \\\n--postman-preRequestScript 'console.log(\"Cleaning up collection...\");' \\\n--postman-test 'pm.test(\"Collection deletion successful\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"All cleanup completed\", function () {\n    pm.environment.unset(\"collectionId\");\n    pm.environment.unset(\"lockId\");\n    pm.environment.unset(\"accessGroupId\");\n    pm.environment.unset(\"accessorId\");\n    pm.environment.unset(\"licensePlate\");\n});'"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
