@@ -853,7 +853,7 @@
 									"const mockResponse = {\r",
 									"    \"access_granted\": false,\r",
 									"    \"reason\": \"outside_schedule\",\r",
-									"    \"license_plate\": \"ABC123987\"\r",
+									"    \"license_plate\": pm.environment.get(\"{{LicensePlate}}\")\r",
 									"};\r",
 									"\r",
 									"pm.test(\"Mock: License plate access verification outside schedule\", function () {\r",
