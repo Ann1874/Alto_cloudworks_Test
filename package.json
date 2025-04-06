@@ -1,0 +1,10 @@
+{
+  "name": "clay-api-tests",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "node run-tests.js"
+  },
+  "devDependencies": {
+    "newman": "^5.3.2"
+  }
+} 
